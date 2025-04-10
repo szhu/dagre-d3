@@ -181,6 +181,7 @@ digraph {
       containerElement: null,
       _changeCallback: null,
       _debounceTimer: null,
+      _savePositionDebounceTimer: null,
 
       initialize(initialValue) {
         this.containerElement = document.getElementById("monaco");
@@ -206,12 +207,36 @@ digraph {
           });
           this._changeCallback?.();
 
+          const savedPosition = sessionStorage.getItem("monacoCursorPosition");
+          if (savedPosition) {
+            try {
+              const positionToRestore = JSON.parse(savedPosition);
+              this.editorInstance.setPosition(positionToRestore);
+              this.editorInstance.revealPositionInCenterIfOutsideViewport(positionToRestore);
+            } catch (e) {
+              console.error("Failed to restore cursor position:", e);
+              sessionStorage.removeItem("monacoCursorPosition"); // Clear invalid data
+            }
+          }
+
+          this.editorInstance.focus();
+
           if (this._changeCallback) {
             this.editorInstance.onDidChangeModelContent(() => {
               if (this._debounceTimer) clearTimeout(this._debounceTimer);
               this._debounceTimer = setTimeout(() => this._changeCallback(), 500);
             });
           }
+
+          this.editorInstance.onDidChangeCursorPosition(() => {
+            clearTimeout(this._savePositionDebounceTimer);
+            this._savePositionDebounceTimer = setTimeout(() => {
+              const currentPosition = this.editorInstance.getPosition();
+              if (currentPosition) {
+                sessionStorage.setItem("monacoCursorPosition", JSON.stringify(currentPosition));
+              }
+            });
+          });
         });
       },
 
@@ -336,6 +361,23 @@ digraph {
         }
       },
     };
+
+    document.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "s") {
+        event.preventDefault();
+        history.replaceState(null, "", Demo.graphToURL());
+      }
+    });
+
+    // Save cursor position before unloading the page (as a fallback)
+    window.addEventListener("beforeunload", () => {
+      if (Demo.editor === MonacoEditor && MonacoEditor.editorInstance) {
+        const position = MonacoEditor.editorInstance.getPosition();
+        if (position) {
+          sessionStorage.setItem("monacoCursorPosition", JSON.stringify(position));
+        }
+      }
+    });
 
     document.addEventListener("DOMContentLoaded", () => Demo.initialize());
   </script>
