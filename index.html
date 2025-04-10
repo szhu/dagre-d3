@@ -87,7 +87,7 @@
   .io {
     display: flex;
     flex: 1 0 0;
-    flex-direction: row;
+    flex-direction: column-reverse;
     gap: 1em;
   }
 
@@ -95,6 +95,10 @@
     display: flex;
     flex: 0 0 50%;
     overflow: hidden;
+  }
+
+  :root:has(#minimizeEditor:checked) .input {
+    flex: 0 0 10%;
   }
 
   #monaco {
@@ -114,6 +118,7 @@
   <header>
     <span>Dagre + D3 Playground </span>
     <div style="flex-grow: 1"></div>
+    <label class="graphLink"><input type="checkbox" id="minimizeEditor"> Minimize Editor</a></label>
     <a class="graphLink" id="graphLink">Save</a>
     <a class="graphLink" href="?">View Demo</a>
   </header>
