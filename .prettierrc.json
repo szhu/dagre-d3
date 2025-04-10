@@ -1,0 +1,15 @@
+{
+  "attributeSort": "ASC",
+  "jsonRecursiveSort": true,
+  "plugins": [
+    "prettier-plugin-organize-imports",
+    "prettier-plugin-packagejson",
+    "prettier-plugin-sort-json",
+    "prettier-plugin-organize-attributes",
+    "prettier-plugin-css-order",
+    "prettier-plugin-tailwindcss"
+  ],
+  "printWidth": 200,
+  "proseWrap": "never",
+  "quoteProps": "consistent"
+}

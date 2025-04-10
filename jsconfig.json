@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "lib": ["es6"],
+    "noUncheckedIndexedAccess": true,
+    "strict": true
+  },
+  "include": ["script.js"]
+}
