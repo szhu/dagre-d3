@@ -94,11 +94,14 @@
   .input {
     display: flex;
     flex: 0 0 50%;
+    overflow: hidden;
   }
 
   #monaco {
     flex: 1 0 0;
+    box-sizing: border-box; /* Required for Monaco to shrink width */
     border: 1px solid #ccc;
+    width: 100%; /* Required for Monaco to shrink width */
   }
 
   .output {
