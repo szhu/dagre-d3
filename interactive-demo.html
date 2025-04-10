@@ -84,13 +84,16 @@
     min-height: 0; /* Important for flex children in column layout */
   }
 
-  .input {
+  .io {
     display: flex;
-    height: 20%;
+    flex: 1 0 0;
+    flex-direction: row;
+    gap: 1em;
   }
 
-  .input:focus-within {
-    height: 80%;
+  .input {
+    display: flex;
+    flex: 0 0 50%;
   }
 
   #monaco {
@@ -112,9 +115,10 @@
     <a class="graphLink" href="?">View Demo</a>
   </header>
 
-  <div class="input">
-    <div id="monaco"></div>
-    <textarea id="inputGraph" style="display: none">
+  <div class="io">
+    <div class="input">
+      <div id="monaco"></div>
+      <textarea id="inputGraph" style="display: none">
 /* Example */
 digraph {
     /* Note: HTML labels do not work in IE, which lacks support for &lt;foreignObject&gt; tags. */
@@ -131,13 +135,14 @@ digraph {
     A -&gt; D [labelType="html" label="A multi-rank <span style='color:blue;'>HTML</span> edge!"];
 }
 </textarea
-    >
-  </div>
+      >
+    </div>
 
-  <div class="output">
-    <svg height="100%" width="100%">
-      <g />
-    </svg>
+    <div class="output">
+      <svg height="100%" width="100%">
+        <g />
+      </svg>
+    </div>
   </div>
 
   <script>
