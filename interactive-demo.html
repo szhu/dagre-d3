@@ -59,14 +59,14 @@
   }
 </style>
 
-<body onLoad="tryDraw();">
+<body>
   <h1>Dagre Interactive Demo</h1>
 
   <h2>Input</h2>
 
   <form>
     <label for="inputGraph">Graphviz Definition</label>
-    <textarea id="inputGraph" onKeyUp="tryDraw();" rows="5" style="display: block">
+    <textarea id="inputGraph" rows="5" style="display: block">
 /* Example */
 digraph {
     /* Note: HTML labels do not work in IE, which lacks support for &lt;foreignObject&gt; tags. */
@@ -95,76 +95,124 @@ digraph {
   </svg>
 
   <script>
-    // Input related code goes here
+    const TextAreaEditor = {
+      element: document.querySelector("#inputGraph"),
 
-    function graphToURL() {
-      var elems = [window.location.protocol, "//", window.location.host, window.location.pathname, "?"];
+      getValue() {
+        return this.element.value;
+      },
 
-      var queryParams = [];
-      if (debugAlignment) {
-        queryParams.push("alignment=" + debugAlignment);
-      }
-      queryParams.push("graph=" + encodeURIComponent(inputGraph.value));
-      elems.push(queryParams.join("&"));
+      setValue(text) {
+        this.element.value = text;
+      },
 
-      return elems.join("");
-    }
+      showError() {
+        this.element.classList.add("error");
+        // Optionally, you could add more visual cues here
+      },
 
-    var inputGraph = document.querySelector("#inputGraph");
+      clearError() {
+        this.element.classList.remove("error");
+      },
 
-    var graphLink = d3.select("#graphLink");
+      // Add an event listener for input changes
+      onInputChange(callback) {
+        this.element.addEventListener("input", callback);
+      },
+    };
 
-    var oldInputGraphValue;
+    const GraphVisualizer = {
+      svg: d3.select("svg"),
+      innerG: d3.select("svg g"),
+      renderer: dagreD3.render(),
+      currentGraphData: null,
 
-    var graphRE = /[?&]graph=([^&]+)/;
-    var graphMatch = window.location.search.match(graphRE);
-    if (graphMatch) {
-      inputGraph.value = decodeURIComponent(graphMatch[1]);
-    }
-    var debugAlignmentRE = /[?&]alignment=([^&]+)/;
-    var debugAlignmentMatch = window.location.search.match(debugAlignmentRE);
-    var debugAlignment;
-    if (debugAlignmentMatch) debugAlignment = debugAlignmentMatch[1];
+      setupZoom() {
+        const zoom = d3.zoom().on("zoom", () => {
+          this.innerG.attr("transform", d3.event.transform);
+        });
+        this.svg.call(zoom);
+      },
 
-    // Set up zoom support
-    var svg = d3.select("svg"),
-      inner = d3.select("svg g"),
-      zoom = d3.zoom().on("zoom", function () {
-        inner.attr("transform", d3.event.transform);
-      });
-    svg.call(zoom);
-
-    // Create and configure the renderer
-    var render = dagreD3.render();
-
-    var g;
-    function tryDraw() {
-      if (oldInputGraphValue !== inputGraph.value) {
-        inputGraph.setAttribute("class", "");
-        oldInputGraphValue = inputGraph.value;
+      parseGraph(dotString) {
         try {
-          g = graphlibDot.read(inputGraph.value);
+          this.currentGraphData = graphlibDot.read(dotString);
+          return { success: true, graph: this.currentGraphData };
         } catch (e) {
-          inputGraph.setAttribute("class", "error");
-          throw e;
+          this.currentGraphData = null; // Clear previous graph data on error
+          console.error("Graph parsing error:", e); // Log the actual error
+          return { success: false, error: e };
         }
+      },
 
-        // Save link to new graph
-        graphLink.attr("href", graphToURL());
+      renderGraph() {
+        if (!this.currentGraphData) return; // Don't render if no valid graph
 
+        const g = this.currentGraphData;
         // Set margins, if not present
         if (!g.graph().hasOwnProperty("marginx") && !g.graph().hasOwnProperty("marginy")) {
           g.graph().marginx = 20;
           g.graph().marginy = 20;
         }
+        g.graph().transition = (selection) => selection.transition().duration(500);
 
-        g.graph().transition = function (selection) {
-          return selection.transition().duration(500);
-        };
+        this.innerG.call(this.renderer, g);
+      },
+    };
 
-        // Render the graph into svg g
-        d3.select("svg g").call(render, g);
-      }
-    }
+    const Demo = {
+      graphLink: d3.select("#graphLink"),
+      oldInputGraphValue: null,
+      debounceTimer: null,
+      debugAlignment: null,
+      editor: TextAreaEditor,
+
+      initialize() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialGraph = urlParams.get("graph");
+        if (initialGraph) {
+          this.editor.setValue(decodeURIComponent(initialGraph));
+        }
+        this.debugAlignment = urlParams.get("alignment");
+
+        this.editor.onInputChange(() => {
+          clearTimeout(this.debounceTimer);
+          // Use arrow function or .bind(this) if tryDraw were not part of Demo
+          this.debounceTimer = setTimeout(() => this.tryDraw(), 500);
+        });
+
+        GraphVisualizer.setupZoom();
+
+        this.tryDraw();
+      },
+
+      graphToURL() {
+        const url = new URL(window.location.href);
+        url.searchParams.set("graph", encodeURIComponent(this.editor.getValue()));
+        if (this.debugAlignment) {
+          url.searchParams.set("alignment", this.debugAlignment);
+        }
+        return url.toString();
+      },
+
+      tryDraw() {
+        const currentGraphValue = this.editor.getValue();
+        if (this.oldInputGraphValue !== currentGraphValue) {
+          this.editor.clearError();
+          this.oldInputGraphValue = currentGraphValue;
+
+          const parseResult = GraphVisualizer.parseGraph(currentGraphValue);
+
+          if (parseResult.success) {
+            this.graphLink.attr("href", this.graphToURL());
+            GraphVisualizer.renderGraph();
+          } else {
+            this.editor.showError();
+          }
+        }
+      },
+    };
+
+    document.addEventListener("DOMContentLoaded", () => Demo.initialize());
   </script>
 </body>
