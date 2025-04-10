@@ -23,7 +23,7 @@
 
   /* SVG Styling */
   svg {
-    border: 1px solid #999;
+    border: 1px solid #ccc;
     overflow: hidden;
   }
 
@@ -197,7 +197,7 @@ digraph {
         require(["vs/editor/editor.main"], () => {
           this.editorInstance = monaco.editor.create(this.containerElement, {
             value: initialValue,
-            language: "plaintext", // 'dot' language not built-in
+            language: "c", // 'dot' language not built-in
             theme: "vs-light",
             automaticLayout: true, // Handles resize
             minimap: { enabled: false },
@@ -207,6 +207,8 @@ digraph {
             matchBrackets: false,
             trimAutoWhitespace: true,
             lineNumbers: "off",
+            cursorStyle: "line-thin",
+            cursorBlinking: "smooth",
           });
           this._changeCallback?.();
 
