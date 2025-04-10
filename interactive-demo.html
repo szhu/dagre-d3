@@ -283,9 +283,18 @@ digraph {
       initialize() {
         const urlParams = new URLSearchParams(window.location.search);
         const initialGraph = urlParams.get("graph");
-        this.debugAlignment = urlParams.get("alignment");
+        let initialGraphDecoded = TextAreaEditor.element.value;
 
-        this.editor.initialize(initialGraph ? decodeURIComponent(initialGraph) : TextAreaEditor.element.value);
+        if (initialGraph) {
+          try {
+            initialGraphDecoded = atob(initialGraph);
+          } catch (e) {
+            console.error("Error decoding base64 graph:", e);
+          }
+        }
+
+        this.debugAlignment = urlParams.get("alignment");
+        this.editor.initialize(initialGraphDecoded);
         this.editor.onInputChange(() => {
           clearTimeout(this.debounceTimer);
           this.debounceTimer = setTimeout(() => this.tryDraw(), 500);
@@ -298,7 +307,7 @@ digraph {
 
       graphToURL() {
         const url = new URL(window.location.href);
-        url.searchParams.set("graph", encodeURIComponent(this.editor.getValue()));
+        url.searchParams.set("graph", btoa(this.editor.getValue()));
         if (this.debugAlignment) {
           url.searchParams.set("alignment", this.debugAlignment);
         }
